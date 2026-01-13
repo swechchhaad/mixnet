@@ -43,8 +43,3 @@ int main(void) {
 
     return 0;
 }
-
-// compile clang -std=c11 -Wall -Wextra -Wconversion -O2 \
-    -Iinclude \
-    src/*.c main.c \
-    -o mixnet
