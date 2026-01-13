@@ -5,18 +5,12 @@
 #include "poly.h"
 #include "params.h"
 
-/*
- * Sample a small polynomial r for rerandomization
- */
 static void sample_small_poly(poly *r) {
     for (int i = 0; i < N; i++) {
         r->coeffs[i] = (rand() % (2 * ETA + 1)) - ETA;
     }
 }
 
-/*
- * Generate a random permutation of [0, n)
- */
 static void random_permutation(size_t *perm, size_t n) {
     for (size_t i = 0; i < n; i++) {
         perm[i] = i;
@@ -47,22 +41,12 @@ void mix_shuffle(ciphertext *out,
         poly r;
         poly ar, br;
 
-        /* Sample fresh rerandomization */
         sample_small_poly(&r);
-
-        /* ar = a * r */
         poly_mul(&ar, &pk->a, &r);
-
-        /* br = b * r */
         poly_mul(&br, &pk->b, &r);
-
-        /* u' = u + a r */
         poly_add(&out[i].u, &in[j].u, &ar);
-
-        /* v' = v + b r */
         poly_add(&out[i].v, &in[j].v, &br);
 
-        /* c* unchanged */
         out[i].c_star = in[j].c_star;
     }
 
@@ -78,8 +62,6 @@ void mixnet_run(ciphertext *cts,
 
     for (size_t k = 0; k < num_servers; k++) {
         mix_shuffle(tmp, cts, n, pk);
-
-        // copy tmp back into cts
         for (size_t i = 0; i < n; i++) {
             cts[i] = tmp[i];
         }
