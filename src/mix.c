@@ -2,14 +2,9 @@
 #include <string.h>
 
 #include "mix.h"
+#include "phase1.h"
 #include "poly.h"
 #include "params.h"
-
-static void sample_small_poly(poly *r) {
-    for (int i = 0; i < N; i++) {
-        r->coeffs[i] = (rand() % (2 * ETA + 1)) - ETA;
-    }
-}
 
 static void random_permutation(size_t *perm, size_t n) {
     for (size_t i = 0; i < n; i++) {
@@ -25,10 +20,10 @@ static void random_permutation(size_t *perm, size_t n) {
     }
 }
 
-void mix_shuffle(ciphertext *out,
-                 const ciphertext *in,
-                 size_t n,
-                 const mlwe_pk *pk) {
+void mix_decrypt_shuffle(ciphertext *out,
+                         const ciphertext *in,
+                         size_t n,
+                         const mlwe_sk *sk) {
 
     size_t *perm = malloc(n * sizeof(size_t));
     if (!perm) return;
@@ -38,16 +33,13 @@ void mix_shuffle(ciphertext *out,
     for (size_t i = 0; i < n; i++) {
         size_t j = perm[i];
 
-        poly r;
-        poly ar, br;
+        poly decrypted;
 
-        sample_small_poly(&r);
-        poly_mul(&ar, &pk->a, &r);
-        poly_mul(&br, &pk->b, &r);
-        poly_add(&out[i].u, &in[j].u, &ar);
-        poly_add(&out[i].v, &in[j].v, &br);
+        phase1_decrypt(&decrypted, &in[j], sk);
 
-        out[i].c_star = in[j].c_star;
+        out[i].u = in[j].u; 
+        out[i].v = in[j].v;
+        out[i].c_star = decrypted;
     }
 
     free(perm);
@@ -55,13 +47,14 @@ void mix_shuffle(ciphertext *out,
 void mixnet_run(ciphertext *cts,
                 size_t n,
                 size_t num_servers,
-                const mlwe_pk *pk) {
+                const mlwe_sk *sks) {
 
     ciphertext *tmp = malloc(n * sizeof(ciphertext));
     if (!tmp) return;
 
     for (size_t k = 0; k < num_servers; k++) {
-        mix_shuffle(tmp, cts, n, pk);
+        mix_decrypt_shuffle(tmp, cts, n, &sks[k]);
+
         for (size_t i = 0; i < n; i++) {
             cts[i] = tmp[i];
         }

@@ -8,7 +8,7 @@
 
 static void sample_binary_seed(int seed[K]) {
     for (int i = 0; i < K; i++) {
-        seed[i] = rand() % 2;
+        seed[i] = rand() % 2; // note: rand is not cryptogtaphically secure; will be replaced later
     }
 }
 static void seed_to_poly(poly *p, const int seed[K]) {
