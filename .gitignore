@@ -1,0 +1,9 @@
+# object files
+*.o
+
+# test binaries
+test_*
+!tests/test_*.c
+
+# main binary
+mixnet
