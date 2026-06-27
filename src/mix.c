@@ -11,8 +11,6 @@ void flatct_free(flatct *c) {
 }
 
 int mix_layer_msglen(int rho, int layer) {
-    /* Innermost layer (layer = rho-1) carries 1 ring element; each outer layer
-     * wraps the inner ciphertext, adding SEED_RING ring elements. */
     return 1 + (rho - 1 - layer) * SEED_RING;
 }
 
@@ -23,8 +21,7 @@ otse_pp *mix_setup(int rho) {
     return pps;
 }
 
-/* Flatten an HPKE ciphertext into ring elements:
- *   [ cseed_0.u[0..kLWE-1], cseed_0.v, ... cseed_{kLWR-1}.* , cstar[0..L-1] ]. */
+
 static void serialize_hpke(poly *out, const hpke_ct *ct) {
     int idx = 0;
     for (int j = 0; j < KLWR; j++) {
@@ -34,7 +31,6 @@ static void serialize_hpke(poly *out, const hpke_ct *ct) {
     for (int i = 0; i < ct->L; i++) poly_copy(&out[idx++], &ct->cstar[i]);
 }
 
-/* Inverse of serialize_hpke. cstar points into the caller's buffer (not owned). */
 static void deserialize_hpke(hpke_ct *ct, poly *in, int total_len) {
     int idx = 0;
     for (int j = 0; j < KLWR; j++) {
@@ -42,12 +38,11 @@ static void deserialize_hpke(hpke_ct *ct, poly *in, int total_len) {
         poly_copy(&ct->cseed[j].v, &in[idx++]);
     }
     ct->L = total_len - SEED_RING;
-    ct->cstar = &in[idx];   // borrow; not freed by hpke_ct_free below
+    ct->cstar = &in[idx]; 
 }
 
 void mix_encrypt(flatct *out, const poly *m,
                  const mlwe_pk *pks, const otse_pp *pps, int rho) {
-    /* Start with the plaintext as a 1-element flat ciphertext. */
     flatct cur;
     cur.len = 1;
     cur.data = malloc(sizeof(poly));
@@ -79,20 +74,19 @@ static void random_permutation(size_t *perm, size_t n) {
     }
 }
 
-/* One server: remove a layer from every ciphertext, then shuffle. */
 static void server_step(flatct *list, size_t n, const mlwe_sk *sk,
                         const otse_pp *pp) {
     flatct *dec = malloc(n * sizeof(flatct));
 
     for (size_t i = 0; i < n; i++) {
         hpke_ct ct;
-        deserialize_hpke(&ct, list[i].data, list[i].len);  // borrows list[i].data
+        deserialize_hpke(&ct, list[i].data, list[i].len); 
 
         dec[i].len = ct.L;
         dec[i].data = malloc((size_t)ct.L * sizeof(poly));
         hpke_dec(dec[i].data, pp, sk, &ct);
 
-        flatct_free(&list[i]);   // frees the buffer ct borrowed from
+        flatct_free(&list[i]);
     }
 
     size_t *perm = malloc(n * sizeof(size_t));
