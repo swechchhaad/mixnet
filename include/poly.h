@@ -8,10 +8,17 @@ typedef struct {
 } poly;
 
 void poly_zero(poly *p);
-void poly_add(poly *r, const poly *a, const poly *b);
+void poly_copy(poly *r, const poly *a);
+int  poly_equal(const poly *a, const poly *b);
+
 void poly_mod(poly *p);
+
+void poly_add(poly *r, const poly *a, const poly *b);
 void poly_sub(poly *r, const poly *a, const poly *b);
+
+/* negacyclic multiplication in Z_q[x]/(x^n + 1). */
 void poly_mul(poly *r, const poly *a, const poly *b);
 
+int  poly_center(int x);
 
 #endif
